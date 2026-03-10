@@ -62,6 +62,10 @@ border-radius:10px;
 display:none;
 }
 
+a{
+color:#60a5fa;
+}
+
 </style>
 
 </head>
@@ -71,8 +75,6 @@ display:none;
 <header>Media Portal</header>
 
 <div class="container">
-
-<!-- LOGIN -->
 
 <div id="login" class="card">
 
@@ -86,8 +88,6 @@ display:none;
 <p id="msg"></p>
 
 </div>
-
-<!-- ADMIN -->
 
 <div id="admin">
 
@@ -132,8 +132,6 @@ display:none;
 
 </div>
 
-<!-- USER -->
-
 <div id="home">
 
 <div class="card">
@@ -160,37 +158,61 @@ display:none;
 
 <script>
 
-let users=[
+let users=JSON.parse(localStorage.getItem("users")) || [
 {id:"yamaguchi20131116",pass:"Yi1116",role:"admin"},
 {id:"yamaguchi1116",pass:"Yi1116",role:"user"}
 ]
 
+let videos=JSON.parse(localStorage.getItem("videos")) || []
+let files=JSON.parse(localStorage.getItem("files")) || []
+
+function saveData(){
+
+localStorage.setItem("users",JSON.stringify(users))
+localStorage.setItem("videos",JSON.stringify(videos))
+localStorage.setItem("files",JSON.stringify(files))
+
+}
+
+function hideAll(){
+
+login.style.display="none"
+admin.style.display="none"
+home.style.display="none"
+
+}
+
 let role=sessionStorage.getItem("role")
+
+hideAll()
 
 if(role==="admin"){
 showAdmin()
 }
-
 else if(role==="user"){
 showHome()
 }
-
 else{
-showLogin()
-}
-
-function showLogin(){
-document.getElementById("login").style.display="block"
+login.style.display="block"
 }
 
 function showAdmin(){
-document.getElementById("admin").style.display="block"
+
+hideAll()
+admin.style.display="block"
+
 loadUsers()
+loadContent()
+
 }
 
 function showHome(){
-document.getElementById("home").style.display="block"
+
+hideAll()
+home.style.display="block"
+
 loadContent()
+
 }
 
 function login(){
@@ -210,12 +232,124 @@ return
 
 }
 
-document.getElementById("msg").innerText="ログイン情報が違います"
+msg.innerText="ログイン情報が違います"
 
 }
 
 function logout(){
-sessionStorage.removeItem("role")
+
+sessionStorage.clear()
 location.reload()
+
 }
 
+function createUser(){
+
+let id=newUser.value
+let pass=newPass.value
+
+if(!id || !pass)return
+
+users.push({id,pass,role:"user"})
+
+saveData()
+loadUsers()
+
+newUser.value=""
+newPass.value=""
+
+}
+
+function loadUsers(){
+
+userList.innerHTML=""
+
+for(let u of users){
+
+userList.innerHTML+=`
+<div>
+${u.id} (${u.role})
+</div>
+`
+
+}
+
+}
+
+function addVideo(){
+
+let url=youtube.value
+
+if(!url)return
+
+videos.push(url)
+
+saveData()
+youtube.value=""
+
+loadContent()
+
+}
+
+function addFile(){
+
+let url=file.value
+
+if(!url)return
+
+files.push(url)
+
+saveData()
+file.value=""
+
+loadContent()
+
+}
+
+function getYoutubeId(url){
+
+let reg=/v=([^&]+)/
+
+let match=url.match(reg)
+
+return match?match[1]:url
+
+}
+
+function loadContent(){
+
+videosDiv=document.getElementById("videos")
+filesDiv=document.getElementById("files")
+
+videosDiv.innerHTML=""
+filesDiv.innerHTML=""
+
+for(let v of videos){
+
+let id=getYoutubeId(v)
+
+videosDiv.innerHTML+=`
+<iframe width="300" height="170"
+src="https://www.youtube.com/embed/${id}"
+frameborder="0" allowfullscreen>
+</iframe>
+`
+
+}
+
+for(let f of files){
+
+filesDiv.innerHTML+=`
+<div>
+<a href="${f}" download>ダウンロード</a>
+</div>
+`
+
+}
+
+}
+
+</script>
+
+</body>
+</html>
