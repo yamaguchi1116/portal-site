@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Media Portal</title>
+
+<style>
+
+body{
+margin:0;
+font-family:Arial;
+background:#0f172a;
+color:white;
+}
+
+header{
+background:#020617;
+padding:15px;
+text-align:center;
+font-size:22px;
+}
+
+.container{
+max-width:1000px;
+margin:auto;
+padding:20px;
+}
+
+.card{
+background:#1e293b;
+padding:20px;
+border-radius:10px;
+margin-bottom:20px;
+}
+
+input{
+padding:10px;
+margin:5px;
+border-radius:6px;
+border:none;
+}
+
+button{
+padding:8px 16px;
+border:none;
+border-radius:6px;
+background:#3b82f6;
+color:white;
+cursor:pointer;
+}
+
+button:hover{
+background:#2563eb;
+}
+
+iframe{
+margin:10px;
+border-radius:10px;
+}
+
+#admin,#home{
+display:none;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>Media Portal</header>
+
+<div class="container">
+
+<!-- LOGIN -->
+
+<div id="login" class="card">
+
+<h2>ログイン</h2>
+
+<input id="id" placeholder="ユーザーID"><br>
+<input id="pass" type="password" placeholder="パスワード"><br>
+
+<button onclick="login()">ログイン</button>
+
+<p id="msg"></p>
+
+</div>
+
+<!-- ADMIN -->
+
+<div id="admin">
+
+<div class="card">
+
+<h2>ユーザー作成</h2>
+
+<input id="newUser" placeholder="ユーザーID">
+<input id="newPass" placeholder="パスワード">
+
+<button onclick="createUser()">作成</button>
+
+</div>
+
+<div class="card">
+
+<h2>ユーザー一覧</h2>
+
+<div id="userList"></div>
+
+</div>
+
+<div class="card">
+
+<h2>YouTube追加</h2>
+
+<input id="youtube" placeholder="YouTube URL">
+<button onclick="addVideo()">追加</button>
+
+</div>
+
+<div class="card">
+
+<h2>ダウンロード追加</h2>
+
+<input id="file" placeholder="ファイルURL">
+<button onclick="addFile()">追加</button>
+
+</div>
+
+<button onclick="logout()">ログアウト</button>
+
+</div>
+
+<!-- USER -->
+
+<div id="home">
+
+<div class="card">
+
+<h2>動画</h2>
+
+<div id="videos"></div>
+
+</div>
+
+<div class="card">
+
+<h2>ダウンロード</h2>
+
+<div id="files"></div>
+
+</div>
+
+<button onclick="logout()">ログアウト</button>
+
+</div>
+
+</div>
+
+<script>
+
+let users=[
+{id:"yamaguchi20131116",pass:"Syk19880331",role:"admin"},
+{id:"yamaguchi1116",pass:"Syk19880331",role:"user"}
+]
+
+let role=sessionStorage.getItem("role")
+
+if(role==="admin"){
+showAdmin()
+}
+
+else if(role==="user"){
+showHome()
+}
+
+else{
+showLogin()
+}
+
+function showLogin(){
+document.getElementById("login").style.display="block"
+}
+
+function showAdmin(){
+document.getElementById("admin").style.display="block"
+loadUsers()
+}
+
+function showHome(){
+document.getElementById("home").style.display="block"
+loadContent()
+}
+
+function login(){
+
+let id=document.getElementById("id").value
+let pass=document.getElementById("pass").value
+
+for(let u of users){
+
+if(u.id===id && u.pass===pass){
+
+sessionStorage.setItem("role",u.role)
+location.reload()
+return
+
+}
+
+}
+
+document.getElementById("msg").innerText="ログイン情報が違います"
+
+}
+
+function logout(){
+sessionStorage.removeItem("role")
+location.reload()
+}
+
+function createUser(){
+
+let id=document.getElementById("newUser").value
+let pass=document.getElementById("newPass").value
+
+users.push({id:id,pass:pass,role:"user"})
+
+loadUsers()
+
+}
+
+function deleteUser(i){
+
+users.splice(i,1)
+
+loadUsers()
+
+}
+
+function loadUsers(){
+
+let list=document.getElementById("userList")
+
+list.innerHTML=""
+
+users.forEach((u,i)=>{
+
+list.innerHTML+=
+`${u.id} / ${u.pass} <button onclick="deleteUser(${i})">削除</button><br>`
+
+})
+
+}
+
+function addVideo(){
+
+let url=document.getElementById("youtube").value
+
+let id=url.split("v=")[1]
+
+let v=document.getElementById("videos")
+
+v.innerHTML+=
+`<iframe width="420" height="230"
+src="https://www.youtube.com/embed/${id}"></iframe>`
+
+}
+
+function addFile(){
+
+let url=document.getElementById("file").value
+
+let f=document.getElementById("files")
+
+f.innerHTML+=
+`<a href="${url}" download>ダウンロード</a><br>`
+
+}
+
+function loadContent(){}
+
+</script>
+
+</body>
+</html>
