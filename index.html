@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>Media Portal</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0f172a;
+    color: white;
+}
+
+header {
+    background: #020617;
+    padding: 15px;
+    text-align: center;
+    font-size: 22px;
+}
+
+.container {
+    max-width: 1000px;
+    margin: auto;
+    padding: 20px;
+}
+
+.card {
+    background: #1e293b;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+input {
+    padding: 10px;
+    margin: 5px;
+    border-radius: 6px;
+    border: none;
+}
+
+button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    background: #3b82f6;
+    color: white;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #2563eb;
+}
+
+iframe {
+    margin: 10px;
+    border-radius: 10px;
+}
+
+#admin, #home {
+    display: none;
+}
+
+a {
+    color: #60a5fa;
+}
+</style>
+
+</head>
+<body>
+
+<header>Media Portal</header>
+
+<div class="container">
+
+<!-- ログイン画面 -->
+<div id="login" class="card">
+    <h2>ログイン</h2>
+    <input id="id" placeholder="ユーザーID"><br>
+    <input id="pass" type="password" placeholder="パスワード"><br>
+    <button onclick="login()">ログイン</button>
+    <p id="msg" style="color: red;"></p> <!-- エラーメッセージ -->
+</div>
+
+<!-- 管理者画面 -->
+<div id="admin">
+    <div class="card">
+        <h2>ユーザー作成</h2>
+        <input id="newUser" placeholder="ユーザーID">
+        <input id="newPass" placeholder="パスワード">
+        <button onclick="createUser()">作成</button>
+    </div>
+    <div class="card">
+        <h2>ユーザー一覧</h2>
+        <div id="userList"></div>
+    </div>
+    <div class="card">
+        <h2>YouTube追加</h2>
+        <input id="youtube" placeholder="YouTube URL">
+        <button onclick="addVideo()">追加</button>
+    </div>
+    <div class="card">
+        <h2>ダウンロード追加</h2>
+        <input id="file" placeholder="ファイルURL">
+        <button onclick="addFile()">追加</button>
+    </div>
+    <button onclick="logout()">ログアウト</button>
+</div>
+
+<!-- ホーム画面 -->
+<div id="home">
+    <div class="card">
+        <h2>動画</h2>
+        <div id="videos"></div>
+    </div>
+    <div class="card">
+        <h2>ダウンロード</h2>
+        <div id="files"></div>
+    </div>
+    <button onclick="logout()">ログアウト</button>
+</div>
+
+</div>
+
+<script>
+// ユーザーデータとコンテンツデータ（ローカルストレージ）
+let users = JSON.parse(localStorage.getItem("users")) || [
+    { id: "yamaguchi20131116", pass: "Yi1116", role: "admin" },
+    { id: "yamaguchi1116", pass: "Yi1116", role: "user" }
+];
+let videos = JSON.parse(localStorage.getItem("videos")) || [];
+let files = JSON.parse(localStorage.getItem("files")) || [];
+
+// データを保存する関数
+function saveData() {
+    localStorage.setItem("users", JSON.stringify(users));
+    localStorage.setItem("videos", JSON.stringify(videos));
+    localStorage.setItem("files", JSON.stringify(files));
+}
+
+// 全画面を非表示にする関数
+function hideAll() {
+    document.getElementById("login").style.display = "none";
+    document.getElementById("admin").style.display = "none";
+    document.getElementById("home").style.display = "none";
+}
+
+// ロールによる画面表示の切り替え
+let role = sessionStorage.getItem("role");
+
+hideAll();
+
+if (role === "admin") {
+    showAdmin();
+} else if (role === "user") {
+    showHome();
+} else {
+    document.getElementById("login").style.display = "block";
+}
+
+// 管理者画面表示
+function showAdmin() {
+    hideAll();
+    document.getElementById("admin").style.display = "block";
+    loadUsers();
+    loadContent();
+}
+
+// ユーザー画面表示
+function showHome() {
+    hideAll();
+    document.getElementById("home").style.display = "block";
+    loadContent();
+}
+
+// ログイン処理
+function login() {
+    let id = document.getElementById("id").value;
+    let pass = document.getElementById("pass").value;
+
+    console.log("ログインID:", id);  // 入力されたIDを表示
+    console.log("ログインパスワード:", pass);  // 入力されたパスワードを表示
+
+    // 入力されたIDとパスワードが一致するユーザーを探す
+    for (let u of users) {
+        if (u.id === id && u.pass === pass) {
+            sessionStorage.setItem("role", u.role); // ログイン成功後、roleをsessionStorageに保存
+            location.reload();  // ログイン成功時にページリロード
+            return;
+        }
+    }
+
+    // ログイン失敗
+    document.getElementById("msg").innerText = "ログイン情報が違います"; 
+}
+
+// ログアウト処理
+function logout() {
+    sessionStorage.clear();
+    location.reload();  // ログアウト時、ページをリロードしてログイン画面に戻す
+}
+
+// ユーザー作成
+function createUser() {
+    let id = document.getElementById("newUser").value;
+    let pass = document.getElementById("newPass").value;
+
+    if (!id || !pass) return;
+
+    users.push({ id, pass, role: "user" });
+    saveData();  // 新しいユーザーをローカルストレージに保存
+    loadUsers();  // ユーザーリストを更新
+
+    document.getElementById("newUser").value = "";
+    document.getElementById("newPass").value = "";
+}
+
+// ユーザー一覧表示
+function loadUsers() {
+    let userList = document.getElementById("userList");
+    userList.innerHTML = "";
+
+    for (let u of users) {
+        userList.innerHTML += `
+            <div>${u.id} (${u.role})</div>
+        `;
+    }
+}
+
+// YouTube動画の追加
+function addVideo() {
+    let url = document.getElementById("youtube").value;
+    if (!url) return;
+
+    videos.push(url);
+    saveData();  // 新しい動画をローカルストレージに保存
+    document.getElementById("youtube").value = "";  // 入力欄をクリア
+
+    loadContent();  // コンテンツを更新
+}
+
+// ダウンロードリンクの追加
+function addFile() {
+    let url = document.getElementById("file").value;
+    if (!url) return;
+
+    files.push(url);
+    saveData();  // 新しいファイルリンクをローカルストレージに保存
+    document.getElementById("file").value = "";  // 入力欄をクリア
+
+    loadContent();  // コンテンツを更新
+}
+
+// YouTubeの動画IDを取得する関数
+function getYoutubeId(url) {
+    let reg = /v=([^&]+)/;
+    let match = url.match(reg);
+    return match ? match[1] : url;
+}
+
+// 動画とファイルのコンテンツ表示
+function loadContent() {
+    let videosDiv = document.getElementById("videos");
+    let filesDiv = document.getElementById("files");
+
+    videosDiv.innerHTML = "";
+    filesDiv.innerHTML = "";
+
+    // 動画の表示
+    for (let v of videos) {
+        let id = getYoutubeId(v);
+        videosDiv.innerHTML += `
+            <iframe width="300" height="170" src="https://www.youtube.com/embed/${id}" frameborder="0" allowfullscreen></iframe>
+        `;
+    }
+
+    // ファイルリンクの表示
+    for (let f of files) {
+        filesDiv.innerHTML += `
+            <div><a href="${f}" download>ダウンロード</a></div>
+        `;
+    }
+}
+</script>
+
+</body>
+</html>
